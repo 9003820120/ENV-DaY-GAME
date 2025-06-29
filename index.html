@@ -1,0 +1,88 @@
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Howl } from "howler";
+import { motion } from "framer-motion";
+
+const items = [
+  { id: 1, name: "Plastic Bottle", type: "non-biodegradable", img: "/plastic.png" },
+  { id: 2, name: "Banana Peel", type: "biodegradable", img: "/banana.png" },
+  { id: 3, name: "Glass Jar", type: "non-biodegradable", img: "/glass.png" },
+  { id: 4, name: "Paper", type: "biodegradable", img: "/paper.png" },
+];
+
+const correctSound = new Howl({ src: ["/correct.mp3"] });
+const wrongSound = new Howl({ src: ["/wrong.mp3"] });
+const bgMusic = new Howl({ src: ["/bg.mp3"], loop: true, volume: 0.3 });
+
+export default function EnvironmentalDayGame() {
+  const [score, setScore] = useState(0);
+  const [currentItem, setCurrentItem] = useState(null);
+  const [message, setMessage] = useState("");
+  const canvasRef = useRef();
+
+  useEffect(() => {
+    bgMusic.play();
+    loadNewItem();
+    return () => {
+      bgMusic.stop();
+    };
+  }, []);
+
+  function loadNewItem() {
+    const random = items[Math.floor(Math.random() * items.length)];
+    setCurrentItem(random);
+  }
+
+  function handleDrop(binType) {
+    if (currentItem.type === binType) {
+      setScore((s) => s + 1);
+      correctSound.play();
+      setMessage("Correct! Great job!");
+    } else {
+      setScore((s) => Math.max(s - 1, 0));
+      wrongSound.play();
+      setMessage("Oops! Try again!");
+    }
+    setTimeout(() => {
+      setMessage("");
+      loadNewItem();
+    }, 1000);
+  }
+
+  return (
+    <div className="flex flex-col items-center p-4 gap-4 bg-green-100 min-h-screen">
+      <h1 className="text-4xl font-bold text-green-800 mb-4">World Environmental Day Game</h1>
+      <p className="text-lg text-gray-700">Sort the item into the correct bin!</p>
+      <p className="text-xl text-green-900">Score: {score}</p>
+
+      {currentItem && (
+        <motion.img
+          key={currentItem.id}
+          src={currentItem.img}
+          alt={currentItem.name}
+          className="w-32 h-32"
+          initial={{ y: -200, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 120 }}
+        />
+      )}
+
+      <div className="flex gap-8 mt-6">
+        <Button
+          className="bg-green-600 hover:bg-green-700 text-white text-lg px-6 py-3 rounded-2xl shadow-lg"
+          onClick={() => handleDrop("biodegradable")}
+        >
+          Biodegradable Bin
+        </Button>
+        <Button
+          className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-6 py-3 rounded-2xl shadow-lg"
+          onClick={() => handleDrop("non-biodegradable")}
+        >
+          Non-Biodegradable Bin
+        </Button>
+      </div>
+
+      {message && <p className="text-xl font-semibold mt-4">{message}</p>}
+    </div>
+  );
+}
